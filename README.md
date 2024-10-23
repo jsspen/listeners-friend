@@ -2,13 +2,11 @@
 
 A simple, interactive program that converts input text to a Spotify playlist.
 
-_**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), is a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
+_**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
 
 _The current version is designed for album titles as input._
 
 ---
-
-[TOC]
 
 ## Getting Started
 
@@ -23,7 +21,7 @@ _The current version is designed for album titles as input._
 3. Enter playlist info when prompted.
 4. A new playlist will be created from your list!
 
-==_First Authorization:_== The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { _whatever you named your app when getting your API credentails_ }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. The OAuth token will be stored in a `.cache` file.
+_First Authorization:_ The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { _whatever you named your app when getting your API credentails_ }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. The OAuth token will be stored in a `.cache` file.
 
 ## How It Works
 
@@ -43,11 +41,16 @@ _The current version is designed for album titles as input._
 To get the necessary info for your `.env` file you'll first need a (free) [Spotify Developer](https://developer.spotify.com/) account.
 
 1. After logging in and landing on the dev dashboard click _Create app_.
-   ![Screenshot of the Create app screen from the Spotify Developer website](imgs/createapp.JPG){: width="75%"}
-2. Fill out the required fields:
-   1. Give your app a name (i.e. _Text-to-Playlist App_) and a brief description, maybe something to remind you why you made it.
-   2. For the Redirect URI you can supply your own or just use https://example.org/callback. Click _Add_.
-   3. Check the box for _Web API_ access and save.
-3. After creating the app you'll be taken to its dashboard. Click _Settings_ in the top right corner. Everything you need for your `.env` file is here on this page:
-   ![alt text](imgs/appsettings.JPG){: width="75%"}
-4. Copy the _Client ID_, click _View client secret_, and if you forgot to copy your Redirect URI earlier you can also see that here. The `example.env` is prepopulated with `https://example.org/callback`.
+   
+   <img src="imgs/createapp.JPG" width="450" alt="Screenshot of the Create app screen from the Spotify Developer website">
+
+3. Fill out the required fields:
+   - Give your app a name (i.e. _Text-to-Playlist App_) and a brief description, maybe something to remind you why you made it.
+   - For the Redirect URI you can supply your own or just use https://example.org/callback. Click _Add_.
+   - Check the box for _Web API_ access and save.
+4. After creating the app you'll be taken to its dashboard. Click _Settings_ in the top right corner. Everything you need for your `.env` file is here on this page:
+
+   <img src="imgs/appsettings.JPG" width="450" alt="Screenshot of the app settings screen from the Spotify Developer website">
+   
+6. Copy the _Client ID_, click _View client secret_, and if you forgot to copy your Redirect URI earlier you can also see that here. The `example.env` is prepopulated with `https://example.org/callback`.
+7. You're ready to start building playlists!
