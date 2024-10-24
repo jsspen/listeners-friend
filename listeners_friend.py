@@ -21,8 +21,8 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
     scope="playlist-modify-public"
 ))
 
-boomkat = input("Grab this week's Boomkat bestseller list (y/n)? ")
-if boomkat == 'y':
+boomkat = input("Grab this week's Boomkat bestseller list (b) or read from input file (f)? ")
+if boomkat == 'b':
     url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
     
     driver = webdriver.Chrome()
@@ -46,7 +46,7 @@ else:
     with open(os.getenv("INPUT_PATH"), "r") as file:
         inputList = [line.strip() for line in file if line.strip()]
 
-if boomkat == 'y':
+if boomkat == 'b':
     playlist_name = "Boomkat Bestsellers: Week Ending " + today
     playlist_description = ''
 else:
