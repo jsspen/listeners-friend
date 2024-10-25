@@ -10,6 +10,7 @@ load_dotenv()
 
 today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
+inputList = []
 album_uris = []
 track_uris = []
 missing = []
@@ -22,12 +23,23 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
     scope="playlist-modify-public"
 ))
 
-print("1. Use txt file list input")
-print("2. Grab this week's Boomkat Bestseller List")
+print("1. Use txt file")
+print("2. Use RateYourMusic List URL")
+print("3. Use today's Boomkat Bestseller List")
 selected_option = input("Please select an option: ")
 
-if selected_option == '2':
-    url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
+if selected_option == '1':
+    with open(os.getenv("INPUT_PATH"), "r") as file:
+        inputList = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
+        playlist_name = input("Enter playlist name: ")
+        playlist_description = input("Enter playlist description: ")
+
+# If using scraped data instead of text input
+if selected_option != '1':
+    if selected_option == '2':
+        url = input("Enter list URL: ")
+    if selected_option == '3':
+        url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
     
     driver = webdriver.Chrome()
     driver.get(url)
@@ -36,22 +48,39 @@ if selected_option == '2':
 
     driver.quit()
     
-    bestsellers_list = soup.find('div', class_='bestsellers').find('ol', class_='bestsellers-list')
-    if bestsellers_list is None:
-        print("not found")
-    else: 
-        inputList = []
-        for item in bestsellers_list.find_all('li', class_='bestsellers-item'):
-            artist = item.find('div', class_='product-name').find_all('a')[0].text.strip()
-            album = item.find('div', class_='product-name').find_all('a')[1].text.strip()
-            inputList.append((artist, album))
-    playlist_name = "Boomkat Bestsellers: Week Ending " + today
-    playlist_description = ''
-if selected_option == '1':
-    with open(os.getenv("INPUT_PATH"), "r") as file:
-        inputList = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
-        playlist_name = input("Enter playlist name: ")
-        playlist_description = input("Enter playlist description: ")
+    # Using a RYM list as input
+    if selected_option == '2':
+        playlist_name = soup.find('h1').get_text(strip=True)
+        playlist_description = soup.find('span', class_='rendered_text').get_text(strip=True)
+        # Truncate long descriptions to fit within Spotify's 300 character limit
+        # Also taking into consideration the 20-22 chars of "### albums not found. " prepended later
+        playlist_description = (playlist_description[:275] + '...') if len(playlist_description) > 278 else playlist_description
+        list = soup.find('table', id='user_list')
+        if list is None:
+            print("not found")
+        else: 
+            for row in list.find_all('tr'):
+                # Find artist, album title, and year
+                artist_tag = row.find('a', class_='list_artist')
+                album_tag = row.find('a', class_='list_album')
+                if not artist_tag or not album_tag:
+                    continue
+                artist = artist_tag.get_text(strip=True)
+                album = album_tag.get_text(strip=True)
+                inputList.append((artist, album))
+    
+    # Using the Boomkat list as input
+    if selected_option == '3':
+        bestsellers_list = soup.find('div', class_='bestsellers').find('ol', class_='bestsellers-list')
+        if bestsellers_list is None:
+            print("not found")
+        else: 
+            for item in bestsellers_list.find_all('li', class_='bestsellers-item'):
+                artist = item.find('div', class_='product-name').find_all('a')[0].text.strip()
+                album = item.find('div', class_='product-name').find_all('a')[1].text.strip()
+                inputList.append((artist, album))
+        playlist_name = "This Week's Boomkat Bestsellers"
+        playlist_description = "For the week ending " + today
 
 # Search for each album
 for artist, album in inputList:
@@ -65,7 +94,7 @@ for artist, album in inputList:
 
 # Print missing album info to console & save to text file
 # Add number of missing albums to the description
-with open("not_found.txt", "w", encoding="utf-8") as file:
+with open(f"not_found_for_{playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
     file.write("Not Found:\n")
     print("Not Found:")
     for album in missing:
