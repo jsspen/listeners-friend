@@ -12,6 +12,7 @@ today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
 album_uris = []
 track_uris = []
+missing = []
 
 # authorization
 spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
@@ -21,8 +22,11 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
     scope="playlist-modify-public"
 ))
 
-boomkat = input("Grab this week's Boomkat bestseller list (b) or read from input file (f)? ")
-if boomkat == 'b':
+print("1. Use txt file list input")
+print("2. Grab this week's Boomkat Bestseller List")
+selected_option = input("Please select an option: ")
+
+if selected_option == '2':
     url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
     
     driver = webdriver.Chrome()
@@ -41,32 +45,27 @@ if boomkat == 'b':
             artist = item.find('div', class_='product-name').find_all('a')[0].text.strip()
             album = item.find('div', class_='product-name').find_all('a')[1].text.strip()
             inputList.append((artist, album))
-    
-else:
-    with open(os.getenv("INPUT_PATH"), "r") as file:
-        inputList = [line.strip() for line in file if line.strip()]
-
-if boomkat == 'b':
     playlist_name = "Boomkat Bestsellers: Week Ending " + today
     playlist_description = ''
-else:
-    playlist_name = input("Enter playlist name: ")
-    playlist_description = input("Enter playlist description: ")
-
-missing = []
+if selected_option == '1':
+    with open(os.getenv("INPUT_PATH"), "r") as file:
+        inputList = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
+        playlist_name = input("Enter playlist name: ")
+        playlist_description = input("Enter playlist description: ")
 
 # Search for each album
 for artist, album in inputList:
     # album specific search using Spotify's "album:{query}" format
     # returns only the top result
-    result = spotify.search(q='album:' + album, type='album', limit=1)
+    result = spotify.search(q='album:' + album + ' artist:' + artist, type="album", limit=1)
+    print(result)
     if result['albums']['items']:
         album_uris.append(result['albums']['items'][0]['uri'])
     else:
         missing.append(artist + " - " + album)
 
 # Print missing album info to console & save to text file
-# If making a Boomkat Bestseller playlist add number of missing albums to the description
+# Add number of missing albums to the description
 with open("not_found.txt", "w", encoding="utf-8") as file:
     file.write("Not Found:\n")
     print("Not Found:")
@@ -88,11 +87,12 @@ user_id = spotify.current_user()["id"]
 playlist = spotify.user_playlist_create(user_id, playlist_name, public=True, description=playlist_description)
 track_uris = [uri for uri in track_uris if uri is not None]
 
+# Break potentially huge list of tracks into easily manageable chunks
 def chunk_list(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
 
-# Break list into chunks of 100 due to limitations of the Spotify API
+# Split to chunks of 100 tracks, the max allowed by the API in a single post
 for chunk in chunk_list(track_uris, 100):
     try:
         spotify.playlist_add_items(playlist['id'], chunk)
