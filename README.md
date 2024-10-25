@@ -1,49 +1,86 @@
 # LISTeners Friend
 
-A simple, interactive program that converts input text to a Spotify playlist.
+A simple, interactive program that converts album lists to Spotify playlists
 
 _**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
 
-_The current version is designed for album titles as input._
-
----
+- [LISTeners Friend](#listeners-friend)
+  - [Getting Started](#getting-started)
+  - [How It Works](#how-it-works)
+    - [Basics](#basics)
+    - [Authorization](#authorization)
+    - [Standard Text Input](#standard-text-input)
+      - [Option 1: Use txt file](#option-1-use-txt-file)
+    - [Scraped Web Data Input](#scraped-web-data-input)
+      - [Option 2: Use RateYourMusic List URL](#option-2-use-rateyourmusic-list-url)
+      - [Option 3: Use Current Boomkat Bestseller List](#option-3-use-current-boomkat-bestseller-list)
+  - [How to Get Spotify API Credentials](#how-to-get-spotify-api-credentials)
 
 ## Getting Started
 
 1. Clone or download a copy of this repo.
 2. Install the required dependencies: `pip install python-dotenv spotipy selenium bs4`
 3. Rename the included `example.env` to `.env`, change the default input file path if desired, and update with your API credentials.
-
-## Basic Usage
-
-1. Add a list of album titles, each on a new line, to `input.txt`
-2. Run the program: `python listeners_friend.py.py`
-3. Select list input source
-4. Albums not found will be saved to a text file and number missing will be added to playlist description
-5. A new playlist will be created!
+4. Run the program: `python listeners_friend.py`
+5. Select type of input source from given options
+   - Option 1: Add a list of albums in the format `artist - album`, each on a new line, to `input.txt`
+   - Option 2: Provide the URL for a list from RateYourMusic.com
+   - Option 3: No user input needed
+6. A new playlist will be created in your account!
 
 ## How It Works
 
+### Basics
+
+Regardless of the input option selected, this is how things operate:
+
+- User is authenticated with the Spotify API, either using the API credentials stored in the `.env` file or an existing token stored in the `.cache` file
+- The chosen data source is read and the necessary information is parsed into an array of tuples in the form `[(artist, album)]` which serves as the finalized input
+- A playlist name and description are either provided by the user (op. 1), taken directly from the data source (op. 2), or auto-generated (op. 3)
+- The finalized input is looped through and the Spotify library is queried for each entry with `q="album:{album} artist:{artist}"` limited to the album data type with a maximum result quantity of 1 so that only the top matching result (if any) is grabbed
+- The album match data is parsed for its URI string
+- Albums which are't found are added to a separate list
+- The API is again queried using the album URI to fetch the tracklist data
+- Tracklist data is parsed for each individual track's URI
+- Once tracks have been gathered for every album URI, a count is taken of the albums not found and this is prepended to the playlist description in the form `"### albums not found.`
+- A text file is saved to the current directory which contains the `artist - album` info for each album not found
+- The necessary info is sent to the user's account for the creation of a new playlist and its ID is retrieved
+- Track URIs are posted to the new playlist
+
+_A Note on Spotify API Limitations_:
+
+- Only individual tracks or podcast episodes, not albums, can be added to playlists, so this is why URIs for each individual track on an album are collected rather than just posting the album URI to the playlist
+- Only 100 tracks can be posted to a playlist at a time so large lists of track URIs are broken into chunks of 100 or less before being sent
+
 ### Authorization
 
-The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { _whatever you named your app when getting your API credentails_ }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. The OAuth token will be stored in a `.cache` file.
+_It is necessary to have Spotify API credentials stored in the `.env` file. If you need help, see the [guide](#how-to-get-spotify-api-credentials) at the end of this doc for details._
+
+The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { _whatever you named your app when getting your API credentails_ }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. Your OAuth token will be stored in the `.cache` file.
 
 ### Standard Text Input
 
-- Reads a text file, parses the info, and creates the relevant Spotify-format search terms. In the current state this means finding the associated URI for each album.
-- Uses Spotify OAuth and a user's credentials, safely stored in environment variables, to authenticate with the official Spotify API.
-- Prompts user to enter a _name_ and an (optional) _description_ for new playlist creation.
-- Iterates through the parsed input info, searches for matches in the Spotify library, and adds them to the newly created playlist.
-- Currently, the Spotify API only allows individual tracks or podcast episodes to be added to playlists, not whole albums, so this limitation is circumvented here by...
-  - Searching the Spotify library for the album
-  - Parsing the match data to find the album URI
-  - Using the album URI to fetch the list of tracks from the album
-  - Parsing the tracklist data to find each song's URI
-  - Adding all of the album's songs, in order, to the new playlist by URI
+#### Option 1: Use txt file
 
-### Boomkat List
+- Filepath is read from the `.env` file, default is `./input.txt`
+- Input in the form of `artist - album \n` is parsed from the text file into the finalized input array
+- User is prompted to enter a _name_ and an (optional) _description_ for the new playlist
 
-You have to option to use the the [Boomkat Bestseller's of the Week](https://boomkat.com/bestsellers?q[release_date]=last-week) list as your input source. If selecting this option the playlist will be built from a list of albums obtained by scraping the list using Selenium and BeautifulSoup.
+### Scraped Web Data Input
+
+Lists hosted on supported websites can be scraped using Selenium and BeautifulSoup to build the finalized input array
+
+#### Option 2: Use RateYourMusic List URL
+
+- The URL to a list at RateYourMusic.com can be supplied as an input source
+- Playlist name is automatically set to the name of the list and description is set to the list description (truncated if it runs beyond Spotify's 300 character limit)
+- Currently multi-page lists cannot be combined and must instead be passed individually
+
+#### Option 3: Use Current Boomkat Bestseller List
+
+- The [Boomkat Bestseller](https://boomkat.com/bestsellers?q[release_date]=last-week) list is used as input source
+- Playlist name is automatically set to `Boomkat Bestsellers` and the description is set to `For the week ending YYYY-MM-DD`, where date is the day the data was gathered
+- Timespan default is one week but can be changed by modifying the (hardcoded) source URL `https://boomkat.com/bestsellers?q[release_date]=last-week` where `last-week` can be replaced with `last-month` or `last-year`.
 
 ## How to Get Spotify API Credentials
 
@@ -61,5 +98,5 @@ To get the necessary info for your `.env` file you'll first need a (free) [Spoti
 
    <img src="imgs/appsettings.JPG" width="450" alt="Screenshot of the app settings screen from the Spotify Developer website">
 
-4. Copy the _Client ID_, click _View client secret_, and if you forgot to copy your Redirect URI earlier you can also see that here. The `example.env` is prepopulated with `https://example.org/callback`.
+4. Copy the _Client ID_ and _Client Secret_ (click _View client secret_) to your `.env` file. If you forgot what Redirect URI you chose earlier you can also grab that from here. The `example.env` is prepopulated with `https://example.org/callback`.
 5. You're ready to start building playlists!
