@@ -58,7 +58,6 @@ for artist, album in inputList:
     # album specific search using Spotify's "album:{query}" format
     # returns only the top result
     result = spotify.search(q='album:' + album + ' artist:' + artist, type="album", limit=1)
-    print(result)
     if result['albums']['items']:
         album_uris.append(result['albums']['items'][0]['uri'])
     else:
