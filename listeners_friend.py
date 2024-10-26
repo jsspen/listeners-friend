@@ -10,7 +10,7 @@ load_dotenv()
 
 today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
-inputList = []
+input_list = []
 album_uris = []
 track_uris = []
 missing = []
@@ -26,11 +26,12 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
 print("1. Use txt file")
 print("2. Use RateYourMusic List URL")
 print("3. Use today's Boomkat Bestseller List")
+print("4. Use current ForcedExposure Bestseller List")
 selected_option = input("Please select an option: ")
 
 if selected_option == '1':
     with open(os.getenv("INPUT_PATH"), "r") as file:
-        inputList = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
+        input_list = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
         playlist_name = input("Enter playlist name: ")
         playlist_description = input("Enter playlist description: ")
 
@@ -40,6 +41,8 @@ if selected_option != '1':
         url = input("Enter list URL: ")
     if selected_option == '3':
         url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
+    if selected_option == '4':
+        url = "https://forcedexposure.com/Best/BestIndex.html"
     
     driver = webdriver.Chrome()
     driver.get(url)
@@ -67,7 +70,7 @@ if selected_option != '1':
                     continue
                 artist = artist_tag.get_text(strip=True)
                 album = album_tag.get_text(strip=True)
-                inputList.append((artist, album))
+                input_list.append((artist, album))
     
     # Using the Boomkat list as input
     if selected_option == '3':
@@ -78,12 +81,26 @@ if selected_option != '1':
             for item in bestsellers_list.find_all('li', class_='bestsellers-item'):
                 artist = item.find('div', class_='product-name').find_all('a')[0].text.strip()
                 album = item.find('div', class_='product-name').find_all('a')[1].text.strip()
-                inputList.append((artist, album))
+                input_list.append((artist, album))
         playlist_name = "This Week's Boomkat Bestsellers"
         playlist_description = "For the week ending " + today
+        
+    # Using the ForcedExposure list as input
+    if selected_option == '4':
+        playlist_name = "Forced Exposure Bestsellers"
+        playlist_description = "As of " + today
+        bestsellers_list = soup.find('table', id='ctl00_ContentPlaceHolder1_gvRecBestSeller')
+        for row in bestsellers_list.find_all('tr', class_='search_resultfields'):
+            artist_tag = row.find('a', id=lambda x: x and 'hlnkArtistId' in x)
+            artist_name = artist_tag.text.strip() if artist_tag else None
+            album_tag = row.find('a', id=lambda x: x and 'hrTitle' in x)
+            album_title = album_tag.text.strip() if album_tag else None
+            if artist_name and album_title:
+                input_list.append((artist_name, album_title))
+
 
 # Search for each album
-for artist, album in inputList:
+for artist, album in input_list:
     # album specific search using Spotify's "album:{query}" format
     # returns only the top result
     result = spotify.search(q='album:' + album + ' artist:' + artist, type="album", limit=1)
