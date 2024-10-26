@@ -1,4 +1,4 @@
-# LISTeners Friend
+# LISTener's Friend
 
 A simple, interactive program that converts album lists to Spotify playlists
 
