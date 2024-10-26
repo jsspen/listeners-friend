@@ -13,7 +13,8 @@ _**Why?**_ When exploring new music I've always preferred listening to albums ra
       - [Option 1: Use txt file](#option-1-use-txt-file)
     - [Scraped Web Data Input](#scraped-web-data-input)
       - [Option 2: Use RateYourMusic List URL](#option-2-use-rateyourmusic-list-url)
-      - [Option 3: Use Current Boomkat Bestseller List](#option-3-use-current-boomkat-bestseller-list)
+      - [Option 3: Use Current Boomkat Bestsellers List](#option-3-use-current-boomkat-bestsellers-list)
+      - [Option 4: Use Current Forced Exposure Bestsellers List](#option-4-use-current-forced-exposure-bestsellers-list)
   - [How to Get Spotify API Credentials](#how-to-get-spotify-api-credentials)
 
 ## Getting Started
@@ -76,11 +77,16 @@ Lists hosted on supported websites can be scraped using Selenium and BeautifulSo
 - Playlist name is automatically set to the name of the list and description is set to the list description (truncated if it runs beyond Spotify's 300 character limit)
 - Currently multi-page lists cannot be combined and must instead be passed individually
 
-#### Option 3: Use Current Boomkat Bestseller List
+#### Option 3: Use Current Boomkat Bestsellers List
 
-- The [Boomkat Bestseller](https://boomkat.com/bestsellers?q[release_date]=last-week) list is used as input source
+- The [Boomkat Bestsellers](https://boomkat.com/bestsellers?q[release_date]=last-week) list is used as input source
 - Playlist name is automatically set to `Boomkat Bestsellers` and the description is set to `For the week ending YYYY-MM-DD`, where date is the day the data was gathered
 - Timespan default is one week but can be changed by modifying the (hardcoded) source URL `https://boomkat.com/bestsellers?q[release_date]=last-week` where `last-week` can be replaced with `last-month` or `last-year`.
+
+#### Option 4: Use Current Forced Exposure Bestsellers List
+- The [Forced Exposure Bestsellers](https://forcedexposure.com/Best/BestIndex.html) list is used as input source
+- Playlist name is automatically set to `Forced Exposure Bestsellers` and the description is set to `As of YYYY-MM-DD`, where date is the day the data was gathered
+- Forced Exposure doesn't offer any alternate timespans and it's not clear how often the list is updated
 
 ## How to Get Spotify API Credentials
 
