@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -23,10 +24,11 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
     scope="playlist-modify-public"
 ))
 
-print("1. Use txt file")
-print("2. Use RateYourMusic List URL")
-print("3. Use today's Boomkat Bestseller List")
+print("1. Use a text file")
+print("2. Use a RateYourMusic List")
+print("3. Use this week's Boomkat Bestseller List")
 print("4. Use current ForcedExposure Bestseller List")
+print("5. Select WFMU Heavy Play List")
 selected_option = input("Please select an option: ")
 
 if selected_option == '1':
@@ -43,6 +45,9 @@ if selected_option != '1':
         url = "https://boomkat.com/bestsellers?q[release_date]=last-week"
     if selected_option == '4':
         url = "https://forcedexposure.com/Best/BestIndex.html"
+    if selected_option == '5':
+        url = "https://www.wfmu.org/Playlists/Wfmu/"
+    
     
     driver = webdriver.Chrome()
     driver.get(url)
@@ -98,6 +103,43 @@ if selected_option != '1':
             if artist_name and album_title:
                 input_list.append((artist_name, album_title))
 
+    # using WFMU
+    if selected_option == '5':
+        year = input("For what year (1987-present): ")
+        print("Select a date: ")
+        for a_tag in soup.find_all("a", class_="playlist"):
+            href = a_tag.get("href")
+            match = re.search(r"/(\d{4})/", href)
+            if match:
+                url_year = match.group(1)
+                if url_year == year:
+                    date_match = re.search(r"(\d{4}-\d{2}-\d{2})\.html", href)
+                    if date_match:
+                        date = date_match.group(1)
+                        print(date)
+        date = input("Enter selection as YYYY-MM-DD: ")
+        
+        sub_url = "http://blogfiles.wfmu.org/BT/Airplay_Lists/" + year + "/" + date + ".html"
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", sub_url)
+        
+        driver = webdriver.Chrome()
+        driver.get(sub_url)
+        html = driver.page_source
+        second_bowl_of_soup = BeautifulSoup(html, 'html.parser')
+
+        driver.quit()
+        
+        date = match.group(1)
+        playlist_name = "WFMU Heavy Play " + date
+        playlist_description = ""
+        for ul in second_bowl_of_soup.find_all('ul'):
+            if any(li.find('strong') for li in ul.find_all('li')):
+                for li in ul.find_all('li'):
+                    match = re.match(r'^(.*?) - (.*?) \((.*?)\)$', li.text)
+                    if match:
+                        artist_name, album_title, record_label = match.groups()
+                        input_list.append((artist_name, album_title))
+
 
 # Search for each album
 for artist, album in input_list:
@@ -111,14 +153,15 @@ for artist, album in input_list:
 
 # Print missing album info to console & save to text file
 # Add number of missing albums to the description
-with open(f"not_found_for_{playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
-    file.write("Not Found:\n")
-    print("Not Found:")
-    for album in missing:
-        print(album)
-        file.write(album + "\n")
-# Update playlist description with number of albums not found.
-playlist_description = str(len(missing)) + " albums not found. " + playlist_description
+if len(missing) > 0:
+    with open(f"not_found_for_{playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
+        file.write("Not Found:\n")
+        print("Not Found:")
+        for album in missing:
+            print(album)
+            file.write(album + "\n")
+    # Update playlist description with number of albums not found.
+    playlist_description = str(len(missing)) + " albums not found. " + playlist_description
 
 # Get the tracks for each album URI
 for album in album_uris:
