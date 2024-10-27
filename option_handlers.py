@@ -16,12 +16,25 @@ def handle_option_2(soup):
     # Also taking into consideration the 20-22 chars of "### albums not found. " prepended later
     playlist_description = (playlist_description[:275] + '...') if len(playlist_description) > 278 else playlist_description
     
+    has_next_page = False
+    next_url = None
+    
+    nav_div = soup.find('div', id='nav_bottom')
+    if nav_div:
+        nav_span = nav_div.find('span', class_='navspan')
+        if nav_span:
+            navlink_next = nav_span.find('a', class_='navlinknext')
+            if navlink_next:
+                next_url = navlink_next['href']
+                if next_url:
+                    next_url = "https://rateyourmusic.com" + next_url
+                    has_next_page = True
+        
     list = soup.find('table', id='user_list')
     if list is None:
-        print("not found")
+        print("List not found")
     else: 
         for row in list.find_all('tr'):
-            # Find artist, album title, and year
             artist_tag = row.find('a', class_='list_artist')
             album_tag = row.find('a', class_='list_album')
             if not artist_tag or not album_tag:
@@ -29,17 +42,19 @@ def handle_option_2(soup):
             artist = artist_tag.get_text(strip=True)
             album = album_tag.get_text(strip=True)
             input_list.append((artist, album))
+        if has_next_page == True:
+            next_bowl_of_soup = get_soup(next_url)
+            handle_option_2(next_bowl_of_soup)
     return playlist_name, playlist_description, input_list
 
 # Boomkat Bestsellers List
 def handle_option_3(soup):
     table = soup.find('div', class_='bestsellers')
     if table is None:
-        print("table not found")
+        print("Table not found")
     bestsellers_list = table.find('ol', class_='bestsellers-list')
     if bestsellers_list is None:
-        print("bestsellers list not found")
-        print(table)
+        print("List not found")
     else: 
         for item in bestsellers_list.find_all('li', class_='bestsellers-item'):
             artist = item.find('div', class_='product-name').find_all('a')[0].text.strip().title()

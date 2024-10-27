@@ -33,9 +33,9 @@ def album_search(playlist_name, playlist_description, input_list, spotify):
     if len(missing) > 0:
         with open(f"not_found_for_{playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
             file.write("Not Found:\n")
-            print("Not Found:")
+            # print("Not Found:")
             for album in missing:
-                print(album)
+                # print(album)
                 file.write(album + "\n")
         # Update playlist description with number of albums not found.
         playlist_description = str(len(missing)) + " albums not found. " + playlist_description

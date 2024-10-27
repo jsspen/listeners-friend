@@ -56,6 +56,6 @@ else:
         playlist_name, playlist_description, input_list = handle_option_4(soup)
     elif selected_option == '5':
         playlist_name, playlist_description, input_list = handle_option_5(soup)
-
-track_uris, playlist_description = album_search(playlist_name, playlist_description, input_list, spotify)
-create_playlist(track_uris, playlist_description, playlist_name, spotify)
+    
+    track_uris, playlist_description = album_search(playlist_name, playlist_description, input_list, spotify)
+    create_playlist(track_uris, playlist_description, playlist_name, spotify)
