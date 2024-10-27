@@ -1,9 +1,7 @@
-import os
 from dotenv import load_dotenv
 from datetime import datetime
 
 import spotipy
-
 
 load_dotenv()
 
@@ -13,6 +11,31 @@ track_uris = []
 
 today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
+
+options = [
+    "Use a text file",
+    "Use a RateYourMusic List",
+    "Use this week's Boomkat Bestseller List",
+    "Use current ForcedExposure Bestseller List",
+    "Select WFMU Heavy Play List",
+]
+
+def display_options(options):
+    for idx, option in enumerate(options, start=1):
+        print(f"{idx}. {option}")
+        
+def get_user_selection(options):
+    while True:
+        display_options(options)
+        try:
+            selected_option = int(input("Please select an option: "))
+            if 1 <= selected_option <= len(options):
+                print(f"You have selected: {options[selected_option-1]}")
+                return selected_option
+            else:
+                print(f"Invalid selection. Please choose a number between 1 and {len(options)}.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
 # Needs playlist_name for titling the missing file
 # Needs playlist_description to update chosen/generated description with missing info
@@ -75,3 +98,6 @@ def create_playlist(track_uris, playlist_description, playlist_name, spotify):
             spotify.playlist_add_items(playlist['id'], chunk)
         except spotipy.exceptions.SpotifyException as e:
             print(f"An error occurred: {e}")
+    print(f"Playlist \"{playlist_name}\" has been successfully created!")
+    print(f"It contains {len(album_uris)} albums for a total of {len(track_uris)} tracks!")
+    print(f"Get to listening!")

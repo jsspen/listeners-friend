@@ -7,7 +7,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 from scraper import get_soup
 from option_handlers import handle_option_2, handle_option_3, handle_option_4, handle_option_5
-from utils import album_search, create_playlist
+from utils import options, get_user_selection, album_search, create_playlist
 
 load_dotenv()
 
@@ -18,12 +18,8 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
         scope="playlist-modify-public"
     ))
 
-print("1. Use a text file")
-print("2. Use a RateYourMusic List")
-print("3. Use this week's Boomkat Bestseller List")
-print("4. Use current ForcedExposure Bestseller List")
-print("5. Select WFMU Heavy Play List")
-selected_option = input("Please select an option: ")
+
+selected_option = get_user_selection(options)
 
 # Text input option
 if selected_option == '1':
@@ -35,26 +31,25 @@ if selected_option == '1':
 # RYM list input option
 if selected_option == '2':
     url = input("Enter list URL: ")
-    
+
+# Web scraping options
 else:
     url_map = {
-        '3': "https://boomkat.com/bestsellers?q[release_date]=last-week",
-        '4': "https://forcedexposure.com/Best/BestIndex.html",
-        '5': "https://www.wfmu.org/Playlists/Wfmu/"
+        3: "https://boomkat.com/bestsellers?q[release_date]=last-week",
+        4: "https://forcedexposure.com/Best/BestIndex.html",
+        5: "https://www.wfmu.org/Playlists/Wfmu/"
     }
     url = url_map.get(selected_option)
-    
-if not url:
-    print("Invalid option selected.")
-else:
+
     soup = get_soup(url)
-    if selected_option == '2':
+    print("Working...")
+    if selected_option == 2:
         playlist_name, playlist_description, input_list = handle_option_2(soup)
-    elif selected_option == '3':
+    elif selected_option == 3:
         playlist_name, playlist_description, input_list = handle_option_3(soup)
-    elif selected_option == '4':
+    elif selected_option == 4:
         playlist_name, playlist_description, input_list = handle_option_4(soup)
-    elif selected_option == '5':
+    elif selected_option == 5:
         playlist_name, playlist_description, input_list = handle_option_5(soup)
     
     track_uris, playlist_description = album_search(playlist_name, playlist_description, input_list, spotify)
