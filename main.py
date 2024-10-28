@@ -6,8 +6,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 from scraper import get_soup
-from option_handlers import handle_option_2, handle_option_3, handle_option_4, handle_option_5
-from utils import options, get_user_selection, album_search, create_playlist
+from option_handlers import handle_option_2, handle_option_3, handle_option_4, handle_option_5, handle_nts_latest, handle_nts_episode
+from utils import options, get_user_selection, album_search, create_playlist, track_search
 
 load_dotenv()
 
@@ -17,8 +17,8 @@ spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(
         redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
         scope="playlist-modify-public"
     ))
-
-
+ 
+output_type = 'albums'
 selected_option = get_user_selection(options)
 
 # Text input option
@@ -27,30 +27,55 @@ if selected_option == '1':
         input_list = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
         playlist_name = input("Enter playlist name: ")
         playlist_description = input("Enter playlist description: ")
-        
-# RYM list input option
-if selected_option == '2':
-    url = input("Enter list URL: ")
 
-# Web scraping options
+# RYM list input
+if selected_option == 2:
+    url = input("Enter list URL: ")
+    
+# NTS episode input
+if selected_option == 7:
+    url = input("Enter episode URL: ")
+   
+# Other web scraping options 
 else:
     url_map = {
         3: "https://boomkat.com/bestsellers?q[release_date]=last-week",
         4: "https://forcedexposure.com/Best/BestIndex.html",
-        5: "https://www.wfmu.org/Playlists/Wfmu/"
+        5: "https://www.wfmu.org/Playlists/Wfmu/",
+        6: "https://www.nts.live/latest"
     }
     url = url_map.get(selected_option)
 
-    soup = get_soup(url)
-    print("Working...")
-    if selected_option == 2:
-        playlist_name, playlist_description, input_list = handle_option_2(soup)
-    elif selected_option == 3:
-        playlist_name, playlist_description, input_list = handle_option_3(soup)
-    elif selected_option == 4:
-        playlist_name, playlist_description, input_list = handle_option_4(soup)
-    elif selected_option == 5:
-        playlist_name, playlist_description, input_list = handle_option_5(soup)
-    
-    track_uris, playlist_description = album_search(playlist_name, playlist_description, input_list, spotify)
-    create_playlist(track_uris, playlist_description, playlist_name, spotify)
+soup = get_soup(url)
+print("Working...")
+
+if selected_option == 2:
+    playlist_name, playlist_description, input_list = handle_option_2(soup)
+elif selected_option == 3:
+    playlist_name, playlist_description, input_list = handle_option_3(soup)
+elif selected_option == 4:
+    playlist_name, playlist_description, input_list = handle_option_4(soup)
+elif selected_option == 5:
+    playlist_name, playlist_description, input_list = handle_option_5(soup)
+elif selected_option == 6:
+    playlist_name, playlist_description, input_list = handle_nts_latest(soup)
+elif selected_option == 7:
+    playlist_name, playlist_description, input_list = handle_nts_episode(soup)
+
+if selected_option in (6,7):
+    output_type = 'tracks'
+
+if output_type == 'albums':  
+    print("Creating an album-based playlist")
+    track_uris, playlist_description, count = album_search(playlist_name, playlist_description, input_list, spotify)
+elif output_type == 'tracks':
+    print("Creating a track-based playlist")
+    track_uris, playlist_description = track_search(spotify, track_input=input_list, playlist_name=playlist_name, playlist_description=playlist_description)
+
+create_playlist(track_uris, playlist_description, playlist_name, spotify)
+print(f"Playlist \"{playlist_name}\" has been successfully created!")
+if output_type == 'tracks':
+    print(f"It contains {len(track_uris)} tracks!")
+elif output_type == 'albums':
+    print(f"It contains {count} albums for a total of {len(track_uris)} tracks!")
+print(f"Get to listening!")

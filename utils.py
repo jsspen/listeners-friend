@@ -1,3 +1,4 @@
+import re
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -13,16 +14,25 @@ today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
 
 options = [
-    "Use a text file",
-    "Use a RateYourMusic List",
-    "Use this week's Boomkat Bestseller List",
-    "Use current ForcedExposure Bestseller List",
-    "Select WFMU Heavy Play List",
+    "Provide a text file",
+    "Provide a RateYourMusic list URL",
+    "Use this week's Boomkat Bestsellers list",
+    "Use current Forced Exposure Bestsellers list",
+    "Select from WFMU \"Heavy Play\" lists",
+    "Browse latest NTS broadcasts",
+    "Provide an NTS episode URL"
 ]
 
 def display_options(options):
-    for idx, option in enumerate(options, start=1):
-        print(f"{idx}. {option}")
+    # Check if this is just a bunch of strings to print or something more complex
+    if type(options[0]) == str:
+        for idx, option in enumerate(options, start=1):
+            print(f"{idx}. {option}")
+    # Right now this is just for displaying lists of NTS Episodes
+    else:
+        for idx, option in enumerate(options, start=1):
+            tags = " #".join(f"{option['tags'][i]}" for i in range(len(option["tags"])))
+            print(f"{idx}. {option['date']} {option['title']}, {option['location']} #{tags}")
         
 def get_user_selection(options):
     while True:
@@ -30,16 +40,22 @@ def get_user_selection(options):
         try:
             selected_option = int(input("Please select an option: "))
             if 1 <= selected_option <= len(options):
-                print(f"You have selected: {options[selected_option-1]}")
                 return selected_option
             else:
                 print(f"Invalid selection. Please choose a number between 1 and {len(options)}.")
         except ValueError:
             print("Invalid input. Please enter a number.")
 
-# Needs playlist_name for titling the missing file
-# Needs playlist_description to update chosen/generated description with missing info
-# Needs input_list to process
+# Print number of missing items to file and prepend basic info to playlist description
+def handle_missing(missing, playlist_name, playlist_description):
+    clean_playlist_name = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", playlist_name)
+    with open(f"not_found_for_{clean_playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
+            file.write("Not Found:\n")
+            for item in missing:
+                file.write(item + "\n")
+    playlist_description = str(len(missing)) + " items not found. " + playlist_description
+    return playlist_description
+
 def album_search(playlist_name, playlist_description, input_list, spotify):
     # Search for each album
     for artist, album in input_list:
@@ -51,33 +67,35 @@ def album_search(playlist_name, playlist_description, input_list, spotify):
         else:
             missing.append(artist + " - " + album)
 
-    # Print missing album info to console & save to text file
-    # Add number of missing albums to the description
     if len(missing) > 0:
-        with open(f"not_found_for_{playlist_name}_{today}.txt", "w", encoding="utf-8") as file:
-            file.write("Not Found:\n")
-            # print("Not Found:")
-            for album in missing:
-                # print(album)
-                file.write(album + "\n")
-        # Update playlist description with number of albums not found.
-        playlist_description = str(len(missing)) + " albums not found. " + playlist_description
+        playlist_description = handle_missing(missing, playlist_name, playlist_description)
         
-    track_uris = track_search(album_uris, spotify)
-    # returns track_uris to send to the playlist creator
-    # returns playlist description as its been updated with missing number
-    # playlist_name only read, not changed
-    return track_uris, playlist_description
+    track_uris = track_search(spotify, album_uris)
+    return track_uris, playlist_description, (len(input_list) - len(missing))
 
 # Take album URIs and return track URIs
-def track_search(album_uris, spotify):
-    # Get the tracks for each album URI
-    for album in album_uris:
-        tracks = spotify.album_tracks(album)['items']
-        # Get the URIs for each track
-        for track in tracks:
-            track_uris.append(track['uri'])
-    return track_uris
+def track_search(spotify, album_uris = None, track_input = None, playlist_name = None, playlist_description = None):
+    if album_uris:
+        # Get the tracks for each album URI
+        for album in album_uris:
+            tracks = spotify.album_tracks(album)['items']
+            # Get the URIs for each track
+            for track in tracks:
+                track_uris.append(track['uri'])
+        return track_uris
+    elif track_input:
+        for track in track_input:
+            artist, title = track
+            result = spotify.search(q=f"artist:{artist} track:{title}", type="track", limit=1)
+            if result['tracks']['items']:
+                uri = result['tracks']['items'][0]['uri']
+                if uri:
+                    track_uris.append(uri)
+            else:
+                missing.append(artist + " - " + title)
+        if len(missing) > 0:
+            playlist_description = handle_missing(missing, playlist_name, playlist_description)
+        return track_uris, playlist_description
 
 # Break potentially huge list of tracks into easily manageable chunks
 def chunk_list(lst, chunk_size):
@@ -86,7 +104,6 @@ def chunk_list(lst, chunk_size):
 
 # Take track URIs and final playlist title & description
 def create_playlist(track_uris, playlist_description, playlist_name, spotify):
-    
     # Create the new playlist
     user_id = spotify.current_user()["id"]
     playlist = spotify.user_playlist_create(user_id, playlist_name, public=True, description=playlist_description)
@@ -98,6 +115,3 @@ def create_playlist(track_uris, playlist_description, playlist_name, spotify):
             spotify.playlist_add_items(playlist['id'], chunk)
         except spotipy.exceptions.SpotifyException as e:
             print(f"An error occurred: {e}")
-    print(f"Playlist \"{playlist_name}\" has been successfully created!")
-    print(f"It contains {len(album_uris)} albums for a total of {len(track_uris)} tracks!")
-    print(f"Get to listening!")
