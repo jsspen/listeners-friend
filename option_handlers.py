@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
 from scraper import get_soup
+from utils import get_user_selection
 
 today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
@@ -111,3 +112,63 @@ def handle_option_5(soup):
                     artist_name, album_title, record_label = match.groups()
                     input_list.append((artist_name.title(), album_title))
     return playlist_name, playlist_description, input_list
+
+# For NTS Formatting
+def format_date(date):
+    day, month, year = date.split('.')
+    return "20" + year + "-" + month + "-" + day
+
+# NTS Episode TRACKS
+def handle_nts_episode(soup):
+    playlist_description = soup.find("div", class_="description").text
+    title_info = soup.find("div", class_="bio__title")
+    title = title_info.find("h1").text
+    location, date = title_info.find("h2").text.split(', ')
+    playlist_name = f"NTS: {title} ({date})"
+    date = format_date(date)
+    playlist_description = f"{playlist_description} Broadcast: {date}, {location}."
+    tracklist = soup.find("ul", class_="tracklist__tracks")
+    for track in tracklist:
+        artist = ''
+        artists = track.find_all("span", class_="track__artist")
+        ## Artist is duplicated in HTML so need to prevent adding duplicates
+        for other_artist in artists:
+            if other_artist.text in artist:
+                continue
+            else:
+                artist = artist + other_artist.text
+            title = track.find("span", class_="track__title").text
+            input_list.append((artist, title))
+    return playlist_name, playlist_description, input_list
+
+# NTS Latest Episode Selection
+def handle_nts_latest(soup):
+    episodes = []
+    
+    for episode in soup.find_all("article", class_="nts-grid-v2-item", limit=12):
+        if episode:
+            title = episode.find("div", class_="nts-grid-v2-item__header__title")
+            if title:
+                title = title.text
+            details = episode.find("div", class_="nts-grid-v2-item__header-details")
+            if details:
+                date = details.find("span").text
+                location = details.find("div").find("span", class_="text-uppercase")
+                if location:
+                    location = location.text
+                else:
+                    location = "n.l."
+            episode_href = episode.find("a", class_="nts-grid-v2-item__header").get('href')
+            if episode_href:
+                sub_url = "https://www.nts.live" + episode_href
+            episode_tags = episode.find("div", class_="nts-grid-v2-item__content").find("div", class_="nts-grid-v2-item__footer").find_all("a")
+            if episode_tags:
+                tags = []
+                for tag in episode_tags:
+                    tags.append(tag.text)
+        date = format_date(date)
+        episodes.append({"title": title, "date": date, "location": location, "link": sub_url, "tags": tags})
+    selection = get_user_selection(episodes)
+    second_bowl_of_soup = get_soup(episodes[selection-1]['link'])
+    handle_nts_episode(second_bowl_of_soup)
+    
