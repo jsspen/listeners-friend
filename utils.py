@@ -16,10 +16,11 @@ today = today_unformatted.strftime('%Y-%m-%d')
 options = [
     "Provide a text file",
     "Provide a RateYourMusic list URL",
-    "Use this week's Boomkat Bestsellers list",
-    "Use current Forced Exposure Bestsellers list",
-    "Select from WFMU \"Heavy Play\" lists",
-    "Browse latest NTS broadcasts",
+    "Build from this week's Boomkat Bestsellers list",
+    "Build from current Forced Exposure Bestsellers list",
+    "Select from WFMU \"Heavy Play\" archive",
+    "Provide WFMU \"Heavy Play\" list URL",
+    "Browse latest NTS episodes",
     "Provide an NTS episode URL"
 ]
 

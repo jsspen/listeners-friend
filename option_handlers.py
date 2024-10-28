@@ -8,7 +8,7 @@ today = today_unformatted.strftime('%Y-%m-%d')
 input_list = []
 
 # RYM List
-def handle_option_2(soup):
+def handle_rym_list(soup):
     playlist_name = soup.find('h1').get_text(strip=True)
     playlist_description = soup.find('span', class_='rendered_text').get_text(strip=True)
     if playlist_description is None:
@@ -45,11 +45,11 @@ def handle_option_2(soup):
             input_list.append((artist, album))
         if has_next_page == True:
             next_bowl_of_soup = get_soup(next_url)
-            handle_option_2(next_bowl_of_soup)
+            handle_rym_list(next_bowl_of_soup)
     return playlist_name, playlist_description, input_list
 
 # Boomkat Bestsellers List
-def handle_option_3(soup):
+def handle_boomkat(soup):
     table = soup.find('div', class_='bestsellers')
     if table is None:
         print("Table not found")
@@ -66,7 +66,7 @@ def handle_option_3(soup):
     return playlist_name, playlist_description, input_list
 
 # Forced Exposure Bestsellers List    
-def handle_option_4(soup):
+def handle_forced_exposure(soup):
     playlist_name = "Forced Exposure Bestsellers"
     playlist_description = "As of " + today
     bestsellers_list = soup.find('table', id='ctl00_ContentPlaceHolder1_gvRecBestSeller')
@@ -80,10 +80,12 @@ def handle_option_4(soup):
     return playlist_name, playlist_description, input_list
 
 # WFMU Heavy Rotation Playlists            
-def handle_option_5(soup):
+def handle_wfmu_latest(soup):
     
     # Make a selection from the available playlists
-    year = input("For what year (1987-present): ")
+    # 1997 to Jan 2013 have different URL/content format
+    # 1987-1996 only available as PDFs
+    year = input("For what year (2014-present): ")
     print("Select a date: ")
     
     # List available dates for selected year as YYYY-MM-DD
@@ -99,12 +101,15 @@ def handle_option_5(soup):
                     print(date)
     date = input("Enter selection as YYYY-MM-DD: ")
     sub_url = "http://blogfiles.wfmu.org/BT/Airplay_Lists/" + year + "/" + date + ".html"
-    second_bowl_of_soup = get_soup(sub_url)
-    match = re.search(r"(\d{4}-\d{2}-\d{2})", sub_url)
-    date = match.group(1)
+    return handle_wfmu_list(get_soup(sub_url))
+    
+
+def handle_wfmu_list(soup):
+    date = soup.title.text[28:]
+    print(date)
     playlist_name = "WFMU Heavy Play " + date
     playlist_description = ""
-    for ul in second_bowl_of_soup.find_all('ul'):
+    for ul in soup.find_all('ul'):
         if any(li.find('strong') for li in ul.find_all('li')):
             for li in ul.find_all('li'):
                 match = re.match(r'^(.*?) - (.*?) \((.*?)\)$', li.text)
@@ -112,7 +117,8 @@ def handle_option_5(soup):
                     artist_name, album_title, record_label = match.groups()
                     input_list.append((artist_name.title(), album_title))
     return playlist_name, playlist_description, input_list
-
+    
+    
 # For NTS Formatting
 def format_date(date):
     day, month, year = date.split('.')
