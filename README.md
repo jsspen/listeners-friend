@@ -4,7 +4,7 @@ A simple, interactive program that converts album lists to Spotify playlists
 
 _**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
 
-- [LISTeners Friend](#listeners-friend)
+- [LISTener's Friend](#listeners-friend)
   - [Getting Started](#getting-started)
   - [How It Works](#how-it-works)
     - [Basics](#basics)
@@ -15,6 +15,8 @@ _**Why?**_ When exploring new music I've always preferred listening to albums ra
       - [Option 2: Use RateYourMusic List URL](#option-2-use-rateyourmusic-list-url)
       - [Option 3: Use Current Boomkat Bestsellers List](#option-3-use-current-boomkat-bestsellers-list)
       - [Option 4: Use Current Forced Exposure Bestsellers List](#option-4-use-current-forced-exposure-bestsellers-list)
+      - [Option 5 \& 6: Browse and Select from WFMU's "Heavy Play" Archive](#option-5--6-browse-and-select-from-wfmus-heavy-play-archive)
+      - [Options 7 \& 8: Browse and Select from Recent NTS Radio Broadcasts](#options-7--8-browse-and-select-from-recent-nts-radio-broadcasts)
   - [How to Get Spotify API Credentials](#how-to-get-spotify-api-credentials)
 
 ## Getting Started
@@ -25,9 +27,10 @@ _**Why?**_ When exploring new music I've always preferred listening to albums ra
 4. Run the program: `python listeners_friend.py`
 5. Select type of input source from given options
    - Option 1: Add a list of albums in the format `artist - album`, each on a new line, to `input.txt`
-   - Option 2: Provide the URL for a list from RateYourMusic.com
-   - Option 3: No user input needed
-6. A new playlist will be created in your account!
+   - Option 2, 6, 8: Provide a URL for supported source
+   - Options 3, 4: No user input needed, fully automated
+   - Options 5, 7: Interactive user input selection
+6. A new playlist will be created directly in your Spotify account, ready to play!
 
 ## How It Works
 
@@ -48,14 +51,14 @@ Regardless of the input option selected, this is how things operate:
 - The necessary info is sent to the user's account for the creation of a new playlist and its ID is retrieved
 - Track URIs are posted to the new playlist
 
-_A Note on Spotify API Limitations_:
+:warning: _Spotify API Limitations_ :warning:
 
 - Only individual tracks or podcast episodes, not albums, can be added to playlists, so this is why URIs for each individual track on an album are collected rather than just posting the album URI to the playlist
 - Only 100 tracks can be posted to a playlist at a time so large lists of track URIs are broken into chunks of 100 or less before being sent
 
 ### Authorization
 
-_It is necessary to have Spotify API credentials stored in the `.env` file. If you need help, see the [guide](#how-to-get-spotify-api-credentials) at the end of this doc for details._
+:warning: _It is necessary to have Spotify API credentials stored in the `.env` file. If you need help, see the [guide](#how-to-get-spotify-api-credentials) at the end of this doc for details._ :warning:
 
 The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { _whatever you named your app when getting your API credentails_ }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. Your OAuth token will be stored in the `.cache` file.
 
@@ -75,7 +78,6 @@ Lists hosted on supported websites can be scraped using Selenium and BeautifulSo
 
 - The URL to a list at RateYourMusic.com can be supplied as an input source
 - Playlist name is automatically set to the name of the list and description is set to the list description (truncated if it runs beyond Spotify's 300 character limit)
-- Currently multi-page lists cannot be combined and must instead be passed individually
 
 #### Option 3: Use Current Boomkat Bestsellers List
 
@@ -84,9 +86,32 @@ Lists hosted on supported websites can be scraped using Selenium and BeautifulSo
 - Timespan default is one week but can be changed by modifying the (hardcoded) source URL `https://boomkat.com/bestsellers?q[release_date]=last-week` where `last-week` can be replaced with `last-month` or `last-year`.
 
 #### Option 4: Use Current Forced Exposure Bestsellers List
+
 - The [Forced Exposure Bestsellers](https://forcedexposure.com/Best/BestIndex.html) list is used as input source
 - Playlist name is automatically set to `Forced Exposure Bestsellers` and the description is set to `As of YYYY-MM-DD`, where date is the day the data was gathered
 - Forced Exposure doesn't offer any alternate timespans and it's not clear how often the list is updated
+
+#### Option 5 & 6: Browse and Select from WFMU's "Heavy Play" Archive 
+
+- Browse the [WFMU "Heavy Play" archive](https://www.wfmu.org/Playlists/Wfmu/) by date
+- Provide a year and receive a list of dated lists to select as an input source
+  - Current Limitations:
+    - 1987-1996 lists are only available as PDF downloads
+    - 1997 to late 2018 vary in format and structure and have inconsistent support at the moment
+- Generates a playlist name `WFMU Heavy Play {Month DD, YYYY}` and a description `{#} items not found.`
+- Option 6 offers the ability to skip the browsing and provide a list URL directly (date limitations still apply!)
+
+:warning: _These can be pretty huge (as in a few thousand songs) so they take a little longer to build than other options and the playlists themselves can be a little slow in your Spotify client!_ :warning:
+
+
+#### Options 7 & 8: Browse and Select from Recent NTS Radio Broadcasts
+
+- Differs from the standard options in that this is a track-based playlist builder
+- Browse the latest from [NTS Radio](https://www.nts.live/)
+- Returns the 12 most recent [broadcasts](https://www.nts.live/latest), including date, name of the program, broadcast location, and any tags
+- Generates a playlist name `NTS: {broadcast title} ({dd.mm.yy})` and description `{#} items not found.{original episode description}. Broadcast: {YYYY-MM-DD}, {location}`
+- Number of episodes returned can be modified by changing the value of `limit=12` at the beginning of the `handle_nts_latest` function.
+- Option 8 offers the option to skip the browsing and provide an episode URL directly
 
 ## How to Get Spotify API Credentials
 
