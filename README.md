@@ -55,6 +55,7 @@ Regardless of the input option selected, this is how things operate:
 
 - Only individual tracks or podcast episodes, not albums, can be added to playlists, so this is why URIs for each individual track on an album are collected rather than just posting the album URI to the playlist
 - Only 100 tracks can be posted to a playlist at a time so large lists of track URIs are broken into chunks of 100 or less before being sent
+- A Spotify playlist can have a maximum of 11,000 tracks, which you can certainly run up against if using a huge RYM list, but functionality to split huge playlists like this is currently tba
 
 ### Authorization
 
