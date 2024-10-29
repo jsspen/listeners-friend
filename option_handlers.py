@@ -10,12 +10,14 @@ input_list = []
 # RYM List
 def handle_rym_list(soup):
     playlist_name = soup.find('h1').get_text(strip=True)
-    playlist_description = soup.find('span', class_='rendered_text').get_text(strip=True)
+    playlist_description = soup.find('span', class_='rendered_text')
     if playlist_description is None:
         playlist_description = ''
+    else:
+        playlist_description = playlist_description.get_text(strip=True)
     # Truncate long descriptions to fit within Spotify's 300 character limit
-    # Also taking into consideration the 20-22 chars of "### albums not found. " prepended later
-    playlist_description = (playlist_description[:275] + '...') if len(playlist_description) > 278 else playlist_description
+    # Also taking into consideration the 19-21 chars of "### items not found. " prepended later
+    playlist_description = (playlist_description[:276] + '...') if len(playlist_description) > 279 else playlist_description
     
     has_next_page = False
     next_url = None
@@ -43,9 +45,9 @@ def handle_rym_list(soup):
             artist = artist_tag.get_text(strip=True)
             album = album_tag.get_text(strip=True)
             input_list.append((artist, album))
-        if has_next_page == True:
-            next_bowl_of_soup = get_soup(next_url)
-            handle_rym_list(next_bowl_of_soup)
+    if has_next_page == True:
+        next_bowl_of_soup = get_soup(next_url)
+        handle_rym_list(next_bowl_of_soup)
     return playlist_name, playlist_description, input_list
 
 # Boomkat Bestsellers List
