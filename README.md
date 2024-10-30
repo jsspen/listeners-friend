@@ -18,6 +18,7 @@ _**Why?**_ When exploring new music I've always preferred listening to albums ra
       - [Option 5 \& 6: Browse and Select from WFMU's "Heavy Play" Archive](#option-5--6-browse-and-select-from-wfmus-heavy-play-archive)
       - [Options 7 \& 8: Browse and Select from Recent NTS Radio Broadcasts](#options-7--8-browse-and-select-from-recent-nts-radio-broadcasts)
   - [How to Get Spotify API Credentials](#how-to-get-spotify-api-credentials)
+  - [On the Horizon](#on-the-horizon)
 
 ## Getting Started
 
@@ -36,8 +37,6 @@ _**Why?**_ When exploring new music I've always preferred listening to albums ra
 
 ### Basics
 
-Regardless of the input option selected, this is how things operate:
-
 - User is authenticated with the Spotify API, either using the API credentials stored in the `.env` file or an existing token stored in the `.cache` file
 - The chosen data source is read and the necessary information is parsed into an array of tuples in the form `[(artist, album)]` which serves as the finalized input
 - A playlist name and description are either provided by the user (op. 1), taken directly from the data source (op. 2), or auto-generated (op. 3)
@@ -46,16 +45,16 @@ Regardless of the input option selected, this is how things operate:
 - Albums which are't found are added to a separate list
 - The API is again queried using the album URI to fetch the tracklist data
 - Tracklist data is parsed for each individual track's URI
-- Once tracks have been gathered for every album URI, a count is taken of the albums not found and this is prepended to the playlist description in the form `"### albums not found.`
-- A text file is saved to the current directory which contains the `artist - album` info for each album not found
+- Once tracks have been gathered for every album URI, a count is taken of the albums not found and this is prepended to the playlist description in the form `"### {albums or tracks} not found.`
+- A text file is saved to the current directory which contains the `artist - {album or track}` info for each album or track not found
 - The necessary info is sent to the user's account for the creation of a new playlist and its ID is retrieved
 - Track URIs are posted to the new playlist
 
-:warning: _Spotify API Limitations_ :warning:
+:warning: _**Spotify API Limitations**_ :warning:
 
 - Only individual tracks or podcast episodes, not albums, can be added to playlists, so this is why URIs for each individual track on an album are collected rather than just posting the album URI to the playlist
 - Only 100 tracks can be posted to a playlist at a time so large lists of track URIs are broken into chunks of 100 or less before being sent
-- A Spotify playlist can have a maximum of 11,000 tracks, which you can certainly run up against if using a huge RYM list, but functionality to split huge playlists like this is currently tba
+- A Spotify playlist can have a maximum of 11,000 tracks, which you can certainly run up against if using a huge RYM list, and in those cases two playlists will be created `{playlist name} (Part 1)` with the first 11,000 tracks and `{playlist name} (Part 2)` with the overflow.
 
 ### Authorization
 
@@ -75,10 +74,14 @@ The first time you run the program you'll be sent to a Spotify authorization pag
 
 Lists hosted on supported websites can be scraped using Selenium and BeautifulSoup to build the finalized input array
 
+:warning: _If you are running the program in Bash you may have difficulty entering a URL for options 2 or 8!_ :warning:
+
 #### Option 2: Use RateYourMusic List URL
 
-- The URL to a list at RateYourMusic.com can be supplied as an input source
+- The URL for a list at [RateYourMusic](https://rateyourmusic.com/lists/) can be supplied as an input source
 - Playlist name is automatically set to the name of the list and description is set to the list description (truncated if it runs beyond Spotify's 300 character limit)
+- The program will iterate through multi-page lists _but_ you may experience a premature end due to RYM's use of the occasional random CloudFlare captcha
+  - A way to circumvent this is tba, for now just retry or pass in the URL of the page where it stopped
 
 #### Option 3: Use Current Boomkat Bestsellers List
 
@@ -99,7 +102,7 @@ Lists hosted on supported websites can be scraped using Selenium and BeautifulSo
   - Current Limitations:
     - 1987-1996 lists are only available as PDF downloads
     - 1997 to late 2018 vary in format and structure and have inconsistent support at the moment
-- Generates a playlist name `WFMU Heavy Play {Month DD, YYYY}` and a description `{#} items not found.`
+- Generates a playlist name `WFMU Heavy Play {Month DD, YYYY}` and a description `{#} albums not found.`
 - Option 6 offers the ability to skip the browsing and provide a list URL directly (date limitations still apply!)
 
 :warning: _These can be pretty huge (as in a few thousand songs) so they take a little longer to build than other options and the playlists themselves can be a little slow in your Spotify client!_ :warning:
@@ -110,7 +113,7 @@ Lists hosted on supported websites can be scraped using Selenium and BeautifulSo
 - Differs from the standard options in that this is a track-based playlist builder
 - Browse the latest from [NTS Radio](https://www.nts.live/)
 - Returns the 12 most recent [broadcasts](https://www.nts.live/latest), including date, name of the program, broadcast location, and any tags
-- Generates a playlist name `NTS: {broadcast title} ({dd.mm.yy})` and description `{#} items not found.{original episode description}. Broadcast: {YYYY-MM-DD}, {location}`
+- Generates a playlist name `NTS: {broadcast title} ({dd.mm.yy})` and description `{#} tracks not found.{original episode description}. Broadcast: {YYYY-MM-DD}, {location}`
 - Number of episodes returned can be modified by changing the value of `limit=12` at the beginning of the `handle_nts_latest` function.
 - Option 8 offers the option to skip the browsing and provide an episode URL directly
 
@@ -132,3 +135,8 @@ To get the necessary info for your `.env` file you'll first need a (free) [Spoti
 
 4. Copy the _Client ID_ and _Client Secret_ (click _View client secret_) to your `.env` file. If you forgot what Redirect URI you chose earlier you can also grab that from here. The `example.env` is prepopulated with `https://example.org/callback`.
 5. You're ready to start building playlists!
+
+## On the Horizon
+
+- [ ] option to add to existing playlists (with duplicate detection)
+- [ ] a pretty GUI
