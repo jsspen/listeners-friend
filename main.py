@@ -28,19 +28,26 @@ if testing == False:
     output_type = 'albums'
     selected_option = get_user_selection(options)
 
+    url_input_option = (2,6,8)
+    tracks_input_option = (7,8)
+    hard_input_option = (3,4,5,6)
+
     # Text input option
-    if selected_option == '1':
+    if selected_option == 1:
         with open(os.getenv("INPUT_PATH"), "r") as file:
             input_list = [tuple(line.strip().split(" - ", 1)) for line in file if line.strip()]
             playlist_name = input("Enter playlist name: ")
             playlist_description = input("Enter playlist description: ")
 
     # RYM or WFMU list or NTS episode direct input
-    if selected_option in (2, 6, 8):
-        url = input("Enter URL: ")
+    if selected_option in url_input_option:
+        url = input("Enter URL: ").strip("'\"")
+
+    if selected_option in tracks_input_option:
+        output_type = 'tracks'
     
     # Other web scraping options
-    else:
+    if selected_option in hard_input_option:
         url_map = {
             3: "https://boomkat.com/bestsellers?q[release_date]=last-week",
             4: "https://forcedexposure.com/Best/BestIndex.html",
@@ -48,9 +55,9 @@ if testing == False:
             6: "https://www.nts.live/latest"
         }
         url = url_map.get(selected_option)
-
-    soup = get_soup(url)
-    print("Working...")
+    
+    if selected_option != 1:
+        soup = get_soup(url)
 
     if selected_option == 2:
         playlist_name, playlist_description, input_list = handle_rym_list(soup)
@@ -66,9 +73,6 @@ if testing == False:
         playlist_name, playlist_description, input_list = handle_nts_latest(soup)
     elif selected_option == 8:
         playlist_name, playlist_description, input_list = handle_nts_episode(soup)
-
-    if selected_option in (7,8):
-        output_type = 'tracks'
 
     if output_type == 'albums':  
         print("Creating an album-based playlist")

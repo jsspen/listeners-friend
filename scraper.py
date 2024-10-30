@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 load_dotenv()
 
 def get_soup(url):
+    print("Fetching data...")
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument(f"user-agent={os.getenv('USER_AGENT')}")

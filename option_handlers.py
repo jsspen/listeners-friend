@@ -6,9 +6,12 @@ from utils import get_user_selection
 today_unformatted = datetime.today().date()
 today = today_unformatted.strftime('%Y-%m-%d')
 input_list = []
+page = 1
 
 # RYM List
 def handle_rym_list(soup):
+    global page
+    print(f"Processing page {str(page)}...")
     playlist_name = soup.find('h1').get_text(strip=True)
     playlist_description = soup.find('span', class_='rendered_text')
     if playlist_description is None:
@@ -35,7 +38,7 @@ def handle_rym_list(soup):
         
     list = soup.find('table', id='user_list')
     if list is None:
-        print("List not found")
+        print("List not found on page {page}, potential captcha block")
     else: 
         for row in list.find_all('tr'):
             artist_tag = row.find('a', class_='list_artist')
@@ -46,12 +49,14 @@ def handle_rym_list(soup):
             album = album_tag.get_text(strip=True)
             input_list.append((artist, album))
     if has_next_page == True:
+        page = page + 1
         next_bowl_of_soup = get_soup(next_url)
         handle_rym_list(next_bowl_of_soup)
     return playlist_name, playlist_description, input_list
 
 # Boomkat Bestsellers List
 def handle_boomkat(soup):
+    print(f"Processing Boomkat Bestsellers list for the week ending {today}...")
     table = soup.find('div', class_='bestsellers')
     if table is None:
         print("Table not found")
@@ -69,6 +74,7 @@ def handle_boomkat(soup):
 
 # Forced Exposure Bestsellers List    
 def handle_forced_exposure(soup):
+    print("Processing current Forced Exposure Bestsellers list...")
     playlist_name = "Forced Exposure Bestsellers"
     playlist_description = "As of " + today
     bestsellers_list = soup.find('table', id='ctl00_ContentPlaceHolder1_gvRecBestSeller')
