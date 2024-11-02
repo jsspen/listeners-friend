@@ -1,6 +1,6 @@
 # LISTener's Friend
 
-A simple, interactive program that converts album lists to Spotify playlists
+An interactive CLI program that converts album lists to Spotify playlists
 
 _**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
 
